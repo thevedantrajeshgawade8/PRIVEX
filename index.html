@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none';"
+    />
+    <title>PRIVEX — Privacy Intelligence &amp; Redaction Engine</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- TOP BRAND & ACTION HEADER -->
+      <header class="topbar">
+        <div class="brand-group">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L4 5v6c0 5.25 3.4 10.1 8 11.5 4.6-1.4 8-6.25 8-11.5V5l-8-3z" />
+              <path d="M9.5 12.2l1.8 1.8 3.7-4" />
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title-row">
+              <h1>PRIVEX</h1>
+              <span class="trust-pill" title="All detection, validation, and redaction runs strictly in browser memory with connect-src 'none'">
+                <span class="trust-dot" aria-hidden="true"></span>
+                <span>100% CLIENT-SIDE · ZERO NETWORK CALLS</span>
+              </span>
+            </div>
+            <p class="brand-subtitle">Privacy Intelligence &amp; Redaction Engine</p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button type="button" id="btn-sample" class="btn btn-secondary">
+            Load Noisy Sample
+          </button>
+          <button type="button" id="btn-upload" class="btn btn-secondary">
+            Upload TXT / CSV
+          </button>
+          <input
+            type="file"
+            id="file-input"
+            accept=".txt,.csv,text/plain,text/csv"
+            hidden
+          />
+          <button type="button" id="btn-sanitize" class="btn btn-primary">
+            Scan / Sanitize
+          </button>
+          <button type="button" id="btn-clear" class="btn btn-ghost">
+            Clear
+          </button>
+          <button type="button" id="btn-tests" class="btn btn-outline">
+            Test Suite
+          </button>
+        </div>
+      </header>
+
+      <!-- MODE CONTROLS & EXPLAINABLE PRIVACY RISK BAR -->
+      <section class="controls-strip" aria-label="Redaction controls and risk indicator">
+        <div class="mode-panel">
+          <span class="panel-kicker">REDACTION MODE</span>
+          <div class="segmented-control" role="radiogroup" aria-label="Redaction mode">
+            <button type="button" class="seg-btn" data-mode="full" role="radio" aria-checked="false">
+              Full Mask
+            </button>
+            <button type="button" class="seg-btn" data-mode="partial" role="radio" aria-checked="false">
+              Partial Mask
+            </button>
+            <button type="button" class="seg-btn active" data-mode="pseudonym" role="radio" aria-checked="true">
+              Consistent Pseudonymization
+            </button>
+          </div>
+        </div>
+
+        <div class="risk-panel" id="risk-panel">
+          <div class="risk-header">
+            <span class="panel-kicker">EXPLAINABLE PRIVACY RISK</span>
+            <span id="risk-badge" class="risk-badge risk-low">LOW · 0 PTS</span>
+          </div>
+          <p id="risk-summary" class="risk-summary">
+            Paste text, upload a .txt/.csv file, or click Load Noisy Sample to inspect PII exposure.
+          </p>
+          <div id="risk-factors" class="risk-factors"></div>
+        </div>
+      </section>
+
+      <!-- DETECTION COUNTERS DASHBOARD -->
+      <section class="metrics-grid" aria-label="Entity detection counters">
+        <button type="button" class="metric-card active-filter" data-filter="ALL">
+          <span class="metric-label">Total Findings</span>
+          <strong class="metric-value" id="count-total">0</strong>
+          <span class="metric-sub" id="sub-unique">0 unique entities</span>
+        </button>
+
+        <button type="button" class="metric-card" data-filter="EMAIL">
+          <span class="metric-label">Email</span>
+          <strong class="metric-value tag-email" id="count-EMAIL">0</strong>
+          <span class="metric-sub">RFC syntax</span>
+        </button>
+
+        <button type="button" class="metric-card" data-filter="PHONE">
+          <span class="metric-label">Phone</span>
+          <strong class="metric-value tag-phone" id="count-PHONE">0</strong>
+          <span class="metric-sub">IN / E.164</span>
+        </button>
+
+        <button type="button" class="metric-card" data-filter="IPV4">
+          <span class="metric-label">IPv4</span>
+          <strong class="metric-value tag-ipv4" id="count-IPV4">0</strong>
+          <span class="metric-sub">0–255 octets</span>
+        </button>
+
+        <button type="button" class="metric-card" data-filter="PAN">
+          <span class="metric-label">Indian PAN</span>
+          <strong class="metric-value tag-pan" id="count-PAN">0</strong>
+          <span class="metric-sub">5A-4N-1A</span>
+        </button>
+
+        <button type="button" class="metric-card" data-filter="AADHAAR">
+          <span class="metric-label">Aadhaar</span>
+          <strong class="metric-value tag-aadhaar" id="count-AADHAAR">0</strong>
+          <span class="metric-sub">12-digit ID</span>
+        </button>
+
+        <button type="button" class="metric-card" data-filter="CREDIT_CARD">
+          <span class="metric-label">Credit Card</span>
+          <strong class="metric-value tag-card" id="count-CREDIT_CARD">0</strong>
+          <span class="metric-sub">Luhn verified</span>
+        </button>
+
+        <div class="metric-card metric-static" title="13–19 digit sequences rejected by Luhn mod-10 validation">
+          <span class="metric-label">Luhn Rejected</span>
+          <strong class="metric-value tag-rejected" id="count-luhn-rejected">0</strong>
+          <span class="metric-sub">False positives blocked</span>
+        </div>
+      </section>
+
+      <!-- SIDE-BY-SIDE ORIGINAL / SANITIZED WORKSPACE -->
+      <main class="workspace-grid">
+        <!-- LEFT PANE: ORIGINAL DATA -->
+        <section class="diff-pane" aria-label="Original data pane">
+          <div class="pane-header">
+            <div class="pane-title-group">
+              <h2>ORIGINAL DATA</h2>
+              <span id="input-format-badge" class="format-badge">TEXT</span>
+            </div>
+            <div class="pane-actions">
+              <div class="view-toggle" role="tablist" aria-label="Original pane view">
+                <button type="button" id="tab-edit" class="view-btn active" role="tab" aria-selected="true">
+                  Edit Raw
+                </button>
+                <button type="button" id="tab-highlight" class="view-btn" role="tab" aria-selected="false">
+                  Highlighted PII
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pane-body">
+            <textarea
+              id="raw-input"
+              class="code-textarea"
+              spellcheck="false"
+              placeholder="Paste raw text, server logs, or KYC records here — or upload a .txt / .csv file above. Everything stays strictly inside your browser."
+              aria-label="Original raw text input"
+            ></textarea>
+            <div
+              id="original-highlight-view"
+              class="highlight-surface hidden"
+              tabindex="0"
+              title="Double-click or switch to Edit Raw to modify input"
+              aria-label="Original text with highlighted PII"
+            ></div>
+          </div>
+          <div class="pane-footer">
+            <span id="original-meta">0 chars · 0 lines</span>
+            <span id="filter-hint" class="muted-hint">Hover highlights for risk &amp; validation details</span>
+          </div>
+        </section>
+
+        <!-- RIGHT PANE: SANITIZED DATA -->
+        <section class="diff-pane" aria-label="Sanitized data pane">
+          <div class="pane-header">
+            <div class="pane-title-group">
+              <h2>SANITIZED DATA</h2>
+              <span id="mode-status-badge" class="format-badge badge-accent">PSEUDONYM</span>
+            </div>
+            <div class="pane-actions">
+              <button type="button" id="btn-copy" class="btn btn-sm btn-secondary">
+                Copy Sanitized
+              </button>
+              <button type="button" id="btn-download-txt" class="btn btn-sm btn-secondary">
+                Download TXT
+              </button>
+              <button type="button" id="btn-download-csv" class="btn btn-sm btn-secondary">
+                Download CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="pane-body">
+            <div
+              id="sanitized-output-view"
+              class="highlight-surface"
+              aria-label="Sanitized output preview"
+            ></div>
+          </div>
+          <div class="pane-footer">
+            <span id="sanitized-meta">0 redactions applied</span>
+            <span id="copy-feedback" class="copy-feedback" aria-live="polite"></span>
+          </div>
+        </section>
+      </main>
+
+      <!-- IN-MEMORY AUDIT / PROMPT LOG -->
+      <section class="audit-section" aria-label="In-memory privacy audit log">
+        <div class="audit-header">
+          <div>
+            <h2>AUDIT / SESSION LOG</h2>
+            <p class="audit-subtitle">
+              Strictly volatile in-memory telemetry — never stores raw PII, cookies, or browser storage.
+            </p>
+          </div>
+          <div class="audit-actions">
+            <button type="button" id="btn-export-audit" class="btn btn-sm btn-secondary">
+              Export Audit Log
+            </button>
+            <button type="button" id="btn-clear-audit" class="btn btn-sm btn-ghost">
+              Clear Log
+            </button>
+          </div>
+        </div>
+
+        <div class="audit-table-wrap">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Time (UTC)</th>
+                <th>Action</th>
+                <th>Mode</th>
+                <th>Input</th>
+                <th>Findings</th>
+                <th>Luhn Rejected</th>
+                <th>Risk</th>
+                <th>Summary</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody">
+              <tr class="audit-empty">
+                <td colspan="8">No events recorded yet. Load the noisy sample, paste text, or upload a file.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- BUILT-IN BROWSER TEST SUITE MODAL -->
+    <div id="test-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="test-modal-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <h2 id="test-modal-title">PRIVEX TEST SUITE</h2>
+            <p id="test-summary-text" class="modal-subtitle">Ready to run client-side verification tests.</p>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="btn-rerun-tests" class="btn btn-sm btn-primary">Re-run Tests</button>
+            <button type="button" id="btn-close-tests" class="btn btn-sm btn-ghost">Close</button>
+          </div>
+        </div>
+        <ul id="test-results-list" class="test-list"></ul>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
